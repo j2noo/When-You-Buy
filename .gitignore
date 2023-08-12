@@ -2,3 +2,5 @@
 /Frontend/node_modules 
 # 
 /Aws/chromedriver.exe
+# Crawling test code
+/Crawling
