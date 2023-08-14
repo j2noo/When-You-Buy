@@ -5,14 +5,13 @@ from datetime import datetime, timedelta  # 크롤링 시간 측정
 import requests  # http 통신
 
 routes = [
-    ["ICN", "NRT"],
     ["ICN", "LAX"],
 ]
 
 startTime = datetime.today()
 # 10일 이후까지
 for route in routes:
-    for days in range(30, 33):
+    for days in range(33, 34):
         departureDate = (startTime + timedelta(days=days)).strftime("%Y%m%d")
         print(departureDate)
 
@@ -57,7 +56,7 @@ for route in routes:
         print("galileo key: ", galileo_key)
         # print(response_data)
 
-        time.sleep(5)
+        time.sleep(3)
         second_payload = {
             "operationName": "getInternationalList",
             "variables": {
@@ -86,7 +85,7 @@ for route in routes:
             url, json=second_payload, headers=headers
         )  # 가져올때도있고 아닐때도 있고. 비동기로 처리?
         second_response_json = second_response.json()
-        print(json.dumps(second_response_json, indent=4))
+        # print(json.dumps(second_response_json, indent=4))
 
         errs = second_response_json["data"]["internationalList"]["results"]["errors"]
         # print("err : ", errs)
@@ -94,9 +93,24 @@ for route in routes:
         results = second_response_json["data"]["internationalList"]["results"]["schedules"][0]  # dict obj
         print("len:", len(results))
 
-        result_li = results.keys()
-        print(result_li)
+        print(results.keys())
+        result_li = results.items()
 
-        print()
+        fare_li = second_response_json["data"]["internationalList"]["results"]["fares"]
 
+        print(len(fare_li))
+
+        for obj in fare_li.values():
+            # print(obj["fare"]["A01"])
+            print(json.dumps(obj["fare"]["A01"][0]["Adult"], indent=4))
+            sum = (
+                0
+                + int(obj["fare"]["A01"][0]["Adult"]["Fare"])
+                + int(obj["fare"]["A01"][0]["Adult"]["NaverFare"])
+                + int(obj["fare"]["A01"][0]["Adult"]["Tax"])
+                + int(obj["fare"]["A01"][0]["Adult"]["QCharge"])
+            )
+            print("합계 : ", sum, obj["sch"])
+            print(results.get(obj["sch"][0])["detail"][0]["sdt"])
+            print(results.get(obj["sch"][0])["detail"][0]["edt"])
         # print(json.dumps(results, indent=4))
