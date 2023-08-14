@@ -5,7 +5,23 @@ import requests  # http 통신
 
 routes = [
     ["ICN", "NRT"],
-    ["ICN", "LAX"],
+    ["NRT", "ICN"],
+    ["ICN", "KIX"],
+    ["KIX", "ICN"],
+    ["ICN", "FUK"],
+    ["FUK", "ICN"],
+    ["ICN", "BKK"],
+    ["BKK", "ICN"],
+    ["ICN", "HKG"],
+    ["HKG", "ICN"],
+    ["ICN", "DAD"],
+    ["DAD", "ICN"],
+    ["ICN", "HAN"],
+    ["HAN", "ICN"],
+    ["ICN", "SGN"],
+    ["SGN", "ICN"],
+    ["GMP", "KIX"],
+    ["KIX", "GMP"],
 ]
 
 startTime = datetime.today()
@@ -55,7 +71,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     print("travel key: ", travel_biz_key)
     print("galileo key: ", galileo_key)
 
-    time.sleep(5)
+    time.sleep(2)
     second_payload = {
         "operationName": "getInternationalList",
         "variables": {
@@ -89,24 +105,36 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     return second_response_json
 
 
+crawled_data = {}
+
 # 10일 이후까지
 for route in routes:
-    for days in range(30, 33):
+    for days in range(30, 31):
         departureDate = (startTime + timedelta(days=days)).strftime("%Y%m%d")
 
         response_json = getResponseJson(route[0], route[1], departureDate)
 
-        print(json.dumps(response_json, indent=4))
+        results = response_json["data"]["internationalList"]["results"]
+        schedules = results["schedules"][0]  # dict obj
+        fares = results["fares"]
 
-        errs = second_response_json["data"]["internationalList"]["results"]["errors"]
-        # print("err : ", errs)
+        print("항공편 개수:", len(schedules))
+        if len(schedules) != len(fares):
+            print("항공편 개수와 fare개수가 다릅니다!")
 
-        results = second_response_json["data"]["internationalList"]["results"]["schedules"][0]  # dict obj
-        print("len:", len(results))
-
-        result_li = results.keys()
-        print(result_li)
-
-        print()
-
-        # print(json.dumps(results, indent=4))
+        for key, values in schedules.items():
+            fareSum = 0
+            for val in (fares.get(key))["fare"]["A01"][0]["Adult"].values():
+                fareSum += int(val)
+            crawled_data[key] = {
+                "id": key,
+                "departureAirport": route[0],
+                "arrivalAirport": route[1],
+                "departureDate": departureDate,
+                "airline": values["detail"][0]["av"],  # 항공
+                "departureTime": values["detail"][0]["sdt"][-4:],  # 출발 시각
+                "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
+                "fare": fareSum,
+            }
+        # print(json.dumps(crawled_data, indent=4))
+        print(len(crawled_data))
