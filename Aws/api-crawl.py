@@ -6,6 +6,8 @@ import requests  # http 통신
 routes = [
     ["ICN", "NRT"],
     ["NRT", "ICN"],
+    ["ICN", "KIX"],
+    ["KIX", "ICN"],
 ]
 routes2 = [
     ["ICN", "NRT"],
@@ -75,7 +77,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     print("travel key: ", travel_biz_key)
     print("galileo key: ", galileo_key)
 
-    time.sleep(5)
+    time.sleep(10)
     second_payload = {
         "operationName": "getInternationalList",
         "variables": {
@@ -113,7 +115,7 @@ crawled_data = {}
 
 # 10일 이후까지
 for route in routes:
-    for days in range(30, 31):
+    for days in range(30, 35):
         departureDate = (startTime + timedelta(days=days)).strftime("%Y%m%d")
 
         response_json = getResponseJson(route[0], route[1], departureDate)
