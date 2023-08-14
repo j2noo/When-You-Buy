@@ -2,8 +2,16 @@ import json  # json 파싱용
 import time
 from datetime import datetime, timedelta  # 크롤링 시간 측정
 import requests  # http 통신
+import concurrent.futures  # 멀티스레딩
+import threading  # threading 모듈 import
 
 routes = [
+    ["ICN", "NRT"],
+    ["NRT", "ICN"],
+    ["ICN", "KIX"],
+    ["KIX", "ICN"],
+]
+routes2 = [
     ["ICN", "NRT"],
     ["NRT", "ICN"],
     ["ICN", "KIX"],
@@ -28,6 +36,7 @@ startTime = datetime.today()
 
 
 def getResponseJson(departureAirport, arrivalAirport, departureDate):
+    response_start = datetime.today()
     url = "https://airline-api.naver.com/graphql"
     headers = {
         "Content-Type": "application/json",
@@ -68,10 +77,11 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     galileo_key = first_response_json["data"]["internationalList"]["galileoKey"]
 
     print(f"{departureAirport} to {arrivalAirport} at {departureDate}========")
+
     print("travel key: ", travel_biz_key)
     print("galileo key: ", galileo_key)
 
-    time.sleep(2)
+    time.sleep(10)
     second_payload = {
         "operationName": "getInternationalList",
         "variables": {
@@ -102,17 +112,31 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     second_response = requests.post(url, json=second_payload, headers=headers)  # 가져올때도있고 아닐때도 있고. 비동기로 처리?
     second_response_json = second_response.json()
 
+    response_end = datetime.today()
+
+    print(
+        f"{departureAirport} to {arrivalAirport} at {departureDate}\nstart time : {response_start}\nenddd time : {response_end}\nrunnning time : {response_end-response_start}"
+    )
     return second_response_json
+
+
+def fetch_data(route, days):
+    departureDate = (startTime + timedelta(days=days)).strftime("%Y%m%d")
+    response_json = getResponseJson(route[0], route[1], departureDate)
+    return response_json
 
 
 crawled_data = {}
 
-# 10일 이후까지
-for route in routes:
-    for days in range(30, 31):
-        departureDate = (startTime + timedelta(days=days)).strftime("%Y%m%d")
 
-        response_json = getResponseJson(route[0], route[1], departureDate)
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    futures = []
+    for route in routes:
+        for days in range(30, 40):
+            futures.append(executor.submit(fetch_data, route, days))
+
+    for future in concurrent.futures.as_completed(futures):
+        response_json = future.result()
 
         results = response_json["data"]["internationalList"]["results"]
         schedules = results["schedules"][0]  # dict obj
@@ -130,7 +154,7 @@ for route in routes:
                 "id": key,
                 "departureAirport": route[0],
                 "arrivalAirport": route[1],
-                "departureDate": departureDate,
+                "departureDate": values["detail"][0]["sdt"][:8],  # 출발 날짜
                 "airline": values["detail"][0]["av"],  # 항공
                 "departureTime": values["detail"][0]["sdt"][-4:],  # 출발 시각
                 "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
@@ -138,3 +162,19 @@ for route in routes:
             }
         # print(json.dumps(crawled_data, indent=4))
         print(len(crawled_data))
+
+print("All threads have finished")
+
+
+endTime = datetime.today()
+
+crawled_data["log"] = {
+    "id": "log",
+    "crawledDate": startTime.strftime("%Y%m%d"),
+    "length": len(crawled_data),
+    "start Time": str(startTime),
+    "running Time": str(endTime - startTime),
+}
+# log 출력
+with open("data2.json", "w") as json_file:  # 덮어쓰기임
+    json.dump(crawled_data, json_file, indent=4)
