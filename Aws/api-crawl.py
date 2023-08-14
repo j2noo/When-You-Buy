@@ -1,21 +1,9 @@
-import selenium  # selenium 라이브러리
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys  # XPath 클릭용
-from selenium.webdriver.chrome.options import Options
-
-# from selenium.webdriver.common.by import By  # 비동기 크롤링
-# from selenium.webdriver.support.ui import WebDriverWait  # 비동기 크롤링
-# from selenium.webdriver.support import expected_conditions as EC  # 비동기 크롤링
-
-from bs4 import BeautifulSoup  # 파싱라입러리
+import json  # json 파싱용
 
 import time
 from datetime import datetime, timedelta  # 크롤링 시간 측정
 
-import requests
-
-chrome_options = Options()  # 웹드라이버 옵션 설정
-chrome_options.add_experimental_option("detach", True)  # 꺼지지 않음\
+import requests  #
 
 
 url = "https://airline-api.naver.com/graphql"
@@ -47,12 +35,12 @@ response_data = response.json()
 schedules = response_data["data"]["internationalList"]["results"]["schedules"]
 travel_biz_key = response_data["data"]["internationalList"]["travelBizKey"]
 galileo_key = response_data["data"]["internationalList"]["galileoKey"]
-print(schedules)
-print(travel_biz_key)
-print(galileo_key)
+# print(schedules)
+print("travle: ", travel_biz_key)
+print("galileo : ", galileo_key)
 # print(response_data)
 
-time.sleep(10)
+time.sleep(5)
 
 
 payload2 = {
@@ -63,8 +51,8 @@ payload2 = {
         "infant": 0,
         "where": "pc",
         "isDirect": True,
-        "galileoFlag": True,
-        "travelBizFlag": False,
+        "galileoFlag": galileo_key != "",
+        "travelBizFlag": travel_biz_key != "",  # 값이 없으면 false
         "fareType": "Y",
         "itinerary": [{"departureAirport": "ICN", "arrivalAirport": "DAD", "departureDate": "20230907"}],
         "stayLength": "",
@@ -74,13 +62,17 @@ payload2 = {
     },
     "query": 'query getInternationalList($trip: String!, $itinerary: [InternationalList_itinerary]!, $adult: Int = 1, $child: Int = 0, $infant: Int = 0, $fareType: String!, $where: String = "pc", $isDirect: Boolean = false, $stayLength: String, $galileoKey: String, $galileoFlag: Boolean = true, $travelBizKey: String, $travelBizFlag: Boolean = true) {\n  internationalList(\n    input: {trip: $trip, itinerary: $itinerary, person: {adult: $adult, child: $child, infant: $infant}, fareType: $fareType, where: $where, isDirect: $isDirect, stayLength: $stayLength, galileoKey: $galileoKey, galileoFlag: $galileoFlag, travelBizKey: $travelBizKey, travelBizFlag: $travelBizFlag}\n  ) {\n    galileoKey\n    galileoFlag\n    travelBizKey\n    travelBizFlag\n    totalResCnt\n    resCnt\n    results {\n      airlines\n      airports\n      fareTypes\n      schedules\n      fares\n      errors\n    }\n  }\n}\n',
 }
-
 response2 = requests.post(url, json=payload2, headers=headers)  # 가져올때도있고 아닐때도 있고. 비동기로 처리?
 response_data2 = response2.json()
-# print(response_data2)
-print(len(response_data2["data"]["internationalList"]["results"]["schedules"][0]))
+print(json.dumps(response_data2, indent=4))
 errs = response_data2["data"]["internationalList"]["results"]["errors"]
-print(errs)
+print("err : ", errs)
+results = response_data2["data"]["internationalList"]["results"]["schedules"][0]  # dict obj
+print("len:", len(results))
+result_li = results.keys()
+print(result_li)
+# print(json.dumps(results, indent=4))
+
 
 # GraphQL 요청 본문 데이터 정의
 
