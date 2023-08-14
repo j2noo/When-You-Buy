@@ -6,6 +6,10 @@ import requests  # http 통신
 routes = [
     ["ICN", "NRT"],
     ["NRT", "ICN"],
+]
+routes2 = [
+    ["ICN", "NRT"],
+    ["NRT", "ICN"],
     ["ICN", "KIX"],
     ["KIX", "ICN"],
     ["ICN", "FUK"],
@@ -71,7 +75,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     print("travel key: ", travel_biz_key)
     print("galileo key: ", galileo_key)
 
-    time.sleep(2)
+    time.sleep(5)
     second_payload = {
         "operationName": "getInternationalList",
         "variables": {
@@ -138,3 +142,16 @@ for route in routes:
             }
         # print(json.dumps(crawled_data, indent=4))
         print(len(crawled_data))
+
+endTime = datetime.today()
+
+crawled_data["log"] = {
+    "id": "log",
+    "crawledDate": startTime.strftime("%Y%m%d"),
+    "length": len(crawled_data),
+    "start Time": str(startTime),
+    "running Time": str(endTime - startTime),
+}
+# log 출력
+with open("data.json", "w") as json_file:  # 덮어쓰기임
+    json.dump(crawled_data, json_file, indent=4)
