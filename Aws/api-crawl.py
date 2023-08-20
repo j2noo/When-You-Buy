@@ -5,13 +5,8 @@ import requests  # http 통신
 import concurrent.futures  # 멀티스레딩
 import threading  # threading 모듈 import
 
+
 routes = [
-    ["ICN", "NRT"],
-    ["NRT", "ICN"],
-    ["ICN", "KIX"],
-    ["KIX", "ICN"],
-]
-routes2 = [
     ["ICN", "NRT"],
     ["NRT", "ICN"],
     ["ICN", "KIX"],
@@ -76,14 +71,9 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     travel_biz_key = first_response_json["data"]["internationalList"]["travelBizKey"]
     galileo_key = first_response_json["data"]["internationalList"]["galileoKey"]
 
-    print(f"{departureAirport} to {arrivalAirport} at {departureDate}========")
-
-    print("travel key: ", travel_biz_key)
-    print("galileo key: ", galileo_key)
-
-    time.sleep(10)
+    time.sleep(20)
     second_payload = {
-        "operationName": "getInternationalList",
+        "operationName ": "getInternationalList",
         "variables": {
             "adult": 1,
             "child": 0,
@@ -115,7 +105,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     response_end = datetime.today()
 
     print(
-        f"{departureAirport} to {arrivalAirport} at {departureDate}\nstart time : {response_start}\nenddd time : {response_end}\nrunnning time : {response_end-response_start}"
+        f"{departureAirport} to {arrivalAirport} at {departureDate}\nstart time : {response_start}\n end  time : {response_end}\nrunnning time : {response_end-response_start}"
     )
     return second_response_json
 
@@ -129,7 +119,7 @@ def fetch_data(route, days):
 crawled_data = {}
 
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
     futures = []
     for route in routes:
         for days in range(30, 40):
@@ -142,7 +132,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         schedules = results["schedules"][0]  # dict obj
         fares = results["fares"]
 
-        print("항공편 개수:", len(schedules))
+        print(f"{next(iter(schedules))} 항공편 개수:", len(schedules))
         if len(schedules) != len(fares):
             print("항공편 개수와 fare개수가 다릅니다!")
 
@@ -162,6 +152,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             }
         # print(json.dumps(crawled_data, indent=4))
         print(len(crawled_data))
+        print()
 
 print("All threads have finished")
 
@@ -176,5 +167,5 @@ crawled_data["log"] = {
     "running Time": str(endTime - startTime),
 }
 # log 출력
-with open("data2.json", "w") as json_file:  # 덮어쓰기임
-    json.dump(crawled_data, json_file, indent=4)
+with open("data2_no_indent.json", "w") as json_file:  # 덮어쓰기임
+    json.dump(crawled_data, json_file)
