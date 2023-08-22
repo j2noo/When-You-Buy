@@ -150,7 +150,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
                 "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
                 "fare": fareSum,
             }
-        # print(json.dumps(crawled_data, indent=4))
+        # print(json.dumps(crawled_data, indent=4) )
         print(len(crawled_data))
         print()
 
