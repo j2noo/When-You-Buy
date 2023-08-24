@@ -13,6 +13,14 @@ routes = [
     ["KIX", "ICN"],
     ["ICN", "FUK"],
     ["FUK", "ICN"],
+]
+routes2 = [
+    ["ICN", "NRT"],
+    ["NRT", "ICN"],
+    ["ICN", "KIX"],
+    ["KIX", "ICN"],
+    ["ICN", "FUK"],
+    ["FUK", "ICN"],
     ["ICN", "BKK"],
     ["BKK", "ICN"],
     ["ICN", "HKG"],
@@ -26,7 +34,6 @@ routes = [
     ["GMP", "KIX"],
     ["KIX", "GMP"],
 ]
-
 startTime = datetime.today()
 
 
@@ -99,7 +106,9 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     }
 
     # GraphQL POST 요청 보내기
-    second_response = requests.post(url, json=second_payload, headers=headers)  # 가져올때도있고 아닐때도 있고. 비동기로 처리?
+    second_response = requests.post(
+        url, json=second_payload, headers=headers
+    )  # 가져올때도있고 아닐때도 있고. 비동기로 처리?
     second_response_json = second_response.json()
 
     response_end = datetime.today()
@@ -119,10 +128,10 @@ def fetch_data(route, days):
 crawled_data = {}
 
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     futures = []
     for route in routes:
-        for days in range(30, 40):
+        for days in range(30, 35):
             futures.append(executor.submit(fetch_data, route, days))
 
     for future in concurrent.futures.as_completed(futures):
