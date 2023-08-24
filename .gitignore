@@ -1,6 +1,8 @@
 # dependencies
 /Frontend/node_modules 
-# 
+
+# 웹드라이버 파일
 /Aws/chromedriver.exe
-# Crawling test code
+
+# 크롤링 성능
 /Crawling
