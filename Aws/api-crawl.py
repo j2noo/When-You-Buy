@@ -3,13 +3,10 @@ import time
 from datetime import datetime, timedelta  # 크롤링 시간 측정
 import requests  # http 통신
 import concurrent.futures  # 멀티스레딩
+import traceback  # 에러확인용
 
 
 routes = [
-    ["ICN", "NRT"],
-    ["NRT", "ICN"],
-]
-routes2 = [
     ["ICN", "NRT"],
     ["NRT", "ICN"],
     ["ICN", "KIX"],
@@ -71,14 +68,18 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     }
 
     # GraphQL POST 요청 보내기 1
-    first_response = requests.post(url, json=first_payload, headers=headers)
+    try:
+        first_response = requests.post(url, json=first_payload, headers=headers)
+        first_response_json = first_response.json()
 
-    if first_response.status_code == 200:  # 요청이 성공한 경우
-        first_response_json = first_response.json()  # JSON 응답을 디코딩하여 파이썬 객체로 가져옴
-    else:
-        print("응답", json.dumps(first_response.text, indent=4))
-        print("첫 번쨰 요청 실패2")
-        raise Exception(f"첫 번째 요청 실팩{departureAirport, arrivalAirport, departureDate}")
+    except:
+        return {
+            "request": "first",
+            "responseCode": first_response.status_code,
+            "departureAirport": departureAirport,
+            "arrivalAirport": arrivalAirport,
+            "departureDate": departureDate,
+        }
 
     # 첫 번째 요청에서 두개의 키 value 가져오기
     travel_biz_key = first_response_json["data"]["internationalList"]["travelBizKey"]
@@ -115,15 +116,17 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     }
 
     # GraphQL POST 요청 보내기 2
-    second_response = requests.post(url, json=second_payload, headers=headers)
-    second_response_json = second_response.json()
-
-    if second_response.status_code == 200:  # 요청이 성공한 경우
-        second_response_json = second_response.json()  # JSON 응답을 디코딩하여 파이썬 객체로 가져옴
-    else:
-        print("두 번쨰 요청 실패")
-        raise Exception(f"두 번째 요청 실패{departureAirport, arrivalAirport, departureDate}")
-
+    try:
+        second_response = requests.post(url, json=second_payload, headers=headers)
+        second_response_json = second_response.json()
+    except:
+        return {
+            "request": "second",
+            "responseCode": second_response.status_code,
+            "departureAirport": departureAirport,
+            "arrivalAirport": arrivalAirport,
+            "departureDate": departureDate,
+        }
     # URL별 요청 시간 체크 - 종료 시간
     response_end = datetime.today()
 
@@ -149,26 +152,26 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
 
     # 스레드 생성
     for route in routes:
-        for days in range(30, 35):
+        for days in range(30, 40):
             futures.append(executor.submit(fetch_data, route, days))
 
     # 스레드가 완료될 때 마다 주기적으로 실행함
     for future in concurrent.futures.as_completed(futures):
         try:
-            response_json = future.result()
-        except:
-            print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            quit()
-        try:
             # 스레드 응답
+            response_json = future.result()
+            results = response_json["data"]["internationalList"]["results"]
+
+            # schedules가 비어있으면 api 다시 호출하기
+            if results["schedules"] == []:
+                raise Exception("response가 비었습니다")
 
             # 응답에서 필요한 데이터 파싱
-            results = response_json["data"]["internationalList"]["results"]
-            schedules = results["schedules"][0]  # dict obj
-            fares = results["fares"]
+            schedules = results["schedules"][0]  # 비행 정보
+            fares = results["fares"]  # 가격 정보
 
             # 항공편 개수 파악
-            print(f"{next(iter(schedules))[:14]} 항공편 개수:", len(schedules))
+            print(f"{next(iter(schedules))[:14 ]} 항공편 개수:", len(schedules))
             if len(schedules) != len(fares):
                 print("항공편 개수와 fare개수가 다릅니다!")
 
@@ -187,14 +190,16 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
                     "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
                     "fare": fareSum,
                 }
-            # print(len(crawled_data))
-            # print()
-        except:
-            print("response err 발생")
 
-            with open("./Crawling/error/error.json", "a+") as json_file:
-                json.dump(response_json, json_file, indent=4)
-
+        except Exception as e:
+            print("response err 발생", e)
+            err_msg = traceback.format_exc()
+            with open("./Crawling/error/error.json", "aa\") as json_file:
+                json.dump(
+                    {"error_message": err_msg, "response_json": response_json},
+                    json_file,
+                    indent=4,
+                )
 print("All threads have finished")
 
 
