@@ -72,7 +72,13 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
 
     # GraphQL POST 요청 보내기 1
     first_response = requests.post(url, json=first_payload, headers=headers)
-    first_response_json = first_response.json()
+
+    if first_response.status_code == 200:  # 요청이 성공한 경우
+        first_response_json = first_response.json()  # JSON 응답을 디코딩하여 파이썬 객체로 가져옴
+    else:
+        print("응답", json.dumps(first_response.text, indent=4))
+        print("첫 번쨰 요청 실패2")
+        raise Exception(f"첫 번째 요청 실팩{departureAirport, arrivalAirport, departureDate}")
 
     # 첫 번째 요청에서 두개의 키 value 가져오기
     travel_biz_key = first_response_json["data"]["internationalList"]["travelBizKey"]
@@ -112,6 +118,12 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     second_response = requests.post(url, json=second_payload, headers=headers)
     second_response_json = second_response.json()
 
+    if second_response.status_code == 200:  # 요청이 성공한 경우
+        second_response_json = second_response.json()  # JSON 응답을 디코딩하여 파이썬 객체로 가져옴
+    else:
+        print("두 번쨰 요청 실패")
+        raise Exception(f"두 번째 요청 실패{departureAirport, arrivalAirport, departureDate}")
+
     # URL별 요청 시간 체크 - 종료 시간
     response_end = datetime.today()
 
@@ -143,8 +155,12 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
     # 스레드가 완료될 때 마다 주기적으로 실행함
     for future in concurrent.futures.as_completed(futures):
         try:
-            # 스레드 응답
             response_json = future.result()
+        except:
+            print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            quit()
+        try:
+            # 스레드 응답
 
             # 응답에서 필요한 데이터 파싱
             results = response_json["data"]["internationalList"]["results"]
@@ -152,7 +168,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
             fares = results["fares"]
 
             # 항공편 개수 파악
-            print(f"{next(iter(schedules))} 항공편 개수:", len(schedules))
+            print(f"{next(iter(schedules))[:14]} 항공편 개수:", len(schedules))
             if len(schedules) != len(fares):
                 print("항공편 개수와 fare개수가 다릅니다!")
 
