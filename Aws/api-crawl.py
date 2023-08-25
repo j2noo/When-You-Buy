@@ -220,5 +220,5 @@ crawled_data["log"] = {
     "running Time": str(endTime - startTime),
 }
 # log 출력
-with open("./Crawling/data/data2_no_indent.json", "w") as json_file:  # 덮어쓰기임
+with open("./Crawling/data/data2_no_indent.json", "w") as json_file:  # 덮어쓰 기임
     json.dump(crawled_data, json_file, indent=4)
