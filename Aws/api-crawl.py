@@ -24,7 +24,7 @@ routes = [
     ["ICN", "SGN"],
     ["SGN", "ICN"],
     ["GMP", "KIX"],
-    ["KIX", "GMP"],
+    ["KIX", "GMP"],  # 18개
 ]
 
 # 프로세스 시작 시간
@@ -70,7 +70,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
     # GraphQL POST 요청 보내기 1
     try:
         first_response = requests.post(url, json=first_payload, headers=headers)
-        first_response_json = first_response.json()
+        first_response_json = first_response.json()  # 얘는 에러이면 동작안함
 
     except:
         return {
@@ -79,6 +79,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
             "departureAirport": departureAirport,
             "arrivalAirport": arrivalAirport,
             "departureDate": departureDate,
+            "response json": first_response.text,
         }
 
     # 첫 번째 요청에서 두개의 키 value 가져오기
@@ -117,8 +118,10 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
 
     # GraphQL POST 요청 보내기 2
     try:
-        second_response = requests.post(url, json=second_payload, headers=headers)
-        second_response_json = second_response.json()
+        second_response = requests.post(
+            url, json=second_payload, headers=headers
+        )  # 여기서 끝나버리면 아래가 할당이 안됨
+        second_response_json = second_response.json()  #
     except:
         return {
             "request": "second",
@@ -126,6 +129,7 @@ def getResponseJson(departureAirport, arrivalAirport, departureDate):
             "departureAirport": departureAirport,
             "arrivalAirport": arrivalAirport,
             "departureDate": departureDate,
+            "response json": second_response.text,
         }
     # URL별 요청 시간 체크 - 종료 시간
     response_end = datetime.today()
@@ -147,12 +151,12 @@ def fetch_data(route, days):
 crawled_data = {}
 
 # 멀티스레딩 라이브러리의 인스턴스를 생성하여 executor로써 관리함
-with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
     futures = []
 
     # 스레드 생성
     for route in routes:
-        for days in range(30, 40):
+        for days in range(31, 32):
             futures.append(executor.submit(fetch_data, route, days))
 
     # 스레드가 완료될 때 마다 주기적으로 실행함
@@ -173,28 +177,28 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
             # 항공편 개수 파악
             print(f"{next(iter(schedules))[:14 ]} 항공편 개수:", len(schedules))
             if len(schedules) != len(fares):
-                print("항공편 개수와 fare개수가 다릅니다!")
+                print("항공편 개수와 fare개수가 다릅니다!", len(schedules), len(fares))
 
-            # 항공편 정보 추출하기
-            for key, values in schedules.items():
-                fareSum = 0
-                for val in (fares.get(key))["fare"]["A01"][0]["Adult"].values():
-                    fareSum += int(val)
-                crawled_data[key] = {
-                    "id": key,
-                    "departureAirport": route[0],
-                    "arrivalAirport": route[1],
-                    "departureDate": values["detail"][0]["sdt"][:8],  # 출발 날짜
-                    "airline": values["detail"][0]["av"],  # 항공
-                    "departureTime": values["detail"][0]["sdt"][-4:],  # 출발 시각
-                    "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
-                    "fare": fareSum,
-                }
+            # # 항공편 정보 추출하기
+            # for key, values in schedules.items():
+            #     fareSum = 0
+            #     for val in (fares.get(key))["fare"]["A01"][0]["Adult"].values():
+            #         fareSum += int(val)
+            #     crawled_data[key] = {
+            #         "id": key,
+            #         "departureAirport": route[0],
+            #         "arrivalAirport": route[1],
+            #         "departureDate": values["detail"][0]["sdt"][:8],  # 출발 날짜
+            #         "airline": values["detail"][0]["av"],  # 항공
+            #         "departureTime": values["detail"][0]["sdt"][-4:],  # 출발 시각
+            #         "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
+            #         "fare": fareSum,
+            #     }
 
         except Exception as e:
             print("response err 발생", e)
             err_msg = traceback.format_exc()
-            with open("./Crawling/error/error.json", "aa\") as json_file:
+            with open("./Crawling/error/error.json", "a") as json_file:
                 json.dump(
                     {"error_message": err_msg, "response_json": response_json},
                     json_file,
@@ -220,5 +224,5 @@ crawled_data["log"] = {
     "running Time": str(endTime - startTime),
 }
 # log 출력
-with open("./Crawling/data/data2_no_indent.json", "w") as json_file:  # 덮어쓰 기임
+with open("./Crawling/data/data2_no_indent.json", "w") as json_file:  # 덮어쓰기임
     json.dump(crawled_data, json_file, indent=4)
