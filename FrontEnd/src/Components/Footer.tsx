@@ -1,4 +1,4 @@
 function Footer() {
-  return <div>푸터</div>;
+  return <div>푸터ㄴㄴㄴㄴ</div>;
 }
 export default Footer;
