@@ -1,10 +1,4 @@
-
-
-const Logo = styled
-
 function Footer() {
-
-
-  return <div>푸터ㄴㄴㄴㄴ</div>;
+  return <div>푸터feat8</div>;
 }
 export default Footer;
