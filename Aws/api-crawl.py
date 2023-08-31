@@ -8,24 +8,24 @@ import traceback  # 에러확인용
 urlCnt = 0
 
 routes = [
-    ["ICN", "NRT"],
-    ["NRT", "ICN"],
-    ["ICN", "KIX"],
-    ["KIX", "ICN"],
-    ["ICN", "FUK"],
-    ["FUK", "ICN"],
-    ["ICN", "BKK"],
-    ["BKK", "ICN"],
-    ["ICN", "HKG"],
-    ["HKG", "ICN"],
     ["ICN", "DAD"],
-    ["DAD", "ICN"],
-    ["ICN", "HAN"],
-    ["HAN", "ICN"],
-    ["ICN", "SGN"],
-    ["SGN", "ICN"],
-    ["GMP", "KIX"],
-    ["KIX", "GMP"],  # 18개
+    # ["DAD", "ICN"],
+    # ["ICN", "NRT"],
+    # ["NRT", "ICN"],
+    # ["ICN", "KIX"],
+    # ["KIX", "ICN"],
+    # ["ICN", "FUK"],
+    # ["FUK", "ICN"],
+    # ["ICN", "BKK"],
+    # ["BKK", "ICN"],
+    # ["ICN", "HKG"],
+    # ["HKG", "ICN"],
+    # ["ICN", "HAN"],
+    # ["HAN", "ICN"],
+    # ["ICN", "SGN"],
+    # ["SGN", "ICN"],
+    # ["GMP", "KIX"],
+    # ["KIX", "GMP"],  # 18개
 ]
 
 # 프로세스 시작 시간
@@ -34,7 +34,7 @@ startTime = datetime.today()
 
 def getResponseJson(departureAirport, arrivalAirport, departureDate):
     # URL별 요청 시간 체크 - 시작 시간
-    time.sleep(20)
+    time.sleep(10)
     response_start = datetime.today()
     url = "https://airline-api.naver.com/graphql"
 
@@ -196,7 +196,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
 
     # 스레드 생성
     for route in routes:
-        for days in range(31, 50):
+        for days in range(3, 202):
             futures.append(executor.submit(fetch_data, route, days))
             time.sleep(3)
 
@@ -234,13 +234,13 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 for val in (fares.get(key))["fare"]["A01"][0]["Adult"].values():
                     fareSum += int(val)
                 crawled_data[key] = {
-                    # "id": key,
-                    # "departureAirport": route[0],
-                    # "arrivalAirport": route[1],
-                    # "departureDate": values["detail"][0]["sdt"][:8],  # 출발 날짜
-                    # "airline": values["detail"][0]["av"],  # 항공
-                    # "departureTime": values["detail"][0]["sdt"][-4:],  # 출발 시각
-                    # "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
+                    "id": key,
+                    "departureAirport": route[0],
+                    "arrivalAirport": route[1],
+                    "departureDate": values["detail"][0]["sdt"][:8],  # 출발 날짜
+                    "airline": values["detail"][0]["av"],  # 항공
+                    "departureTime": values["detail"][0]["sdt"][-4:],  # 출발 시각
+                    "arrivalTime": values["detail"][0]["edt"][-4:],  # 도착 시각
                     "fare": fareSum,
                 }
 
