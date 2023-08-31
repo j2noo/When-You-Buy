@@ -6,3 +6,6 @@
 
 # 크롤링 성능
 /Crawling
+
+# 빌드
+/Frontend/dist
