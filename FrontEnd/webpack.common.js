@@ -21,6 +21,10 @@ module.exports = {
           },
         ],
       },
+      {
+        test: /\.woff?$/,
+        loader: "url-loader",
+      },
     ],
   },
   output: {
